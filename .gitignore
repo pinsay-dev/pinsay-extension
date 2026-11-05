@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-edge/
+dist-firefox/
+
+# Web Store upload packages (build artifacts)
+pinsay-ext-*.zip
+pinsay-extension-*.zip
+
+# snapdom fetched for a standalone build (see README § Build from source)
+vendor-src/

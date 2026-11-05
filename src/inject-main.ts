@@ -1,0 +1,159 @@
+// Runs in the PAGE's MAIN world (serialized via chrome.scripting.executeScript
+// `func`). MUST be fully self-contained — it cannot reference module scope or
+// `chrome.*`. It installs the PinSay config + a proxy transport, then loads the
+// live widget from the server. All API traffic is posted to the isolated content
+// bridge (which relays to the background), so the real JWT never enters the page.
+export function injectMain(cfg: {
+  server: string;
+  project: string;
+  environment: string;
+  /** Display name plus opaque id / admin / quick-access flags — email and role name are omitted (PII, fix 1.3). */
+  displayName?: string;
+  userId?: string;
+  isAdmin?: boolean;
+  isQuickAccess?: boolean;
+  /** Extension-origin URL for the bundled snapdom (chrome-extension://…) — this one stays bundled
+   *  since it changes rarely, unlike widget.js/widget.css below. */
+  snapdomUrl?: string;
+  /** Signed-out visitor on a visitor-enabled site: no proxy token, no user; the widget's own visitor UI runs. */
+  visitor?: boolean;
+  visitorEntry?: 'leave' | 'track';
+  /** Universal capture on a site with no project (T11): no token, no user. */
+  unclaimed?: boolean;
+}): void {
+  const w = window as unknown as Record<string, unknown>;
+  if (w.__pinsayExtMounted) return;
+  w.__pinsayExtMounted = true;
+
+  const PROXY_TOKEN = '__pinsay_via_proxy__';
+  const pending: Record<number, (r: Response) => void> = {};
+  let counter = 0;
+
+  // Only accept response messages from our own origin (defense-in-depth: cross-origin
+  // frames cannot spoof responses or read the reply bodies we receive).
+  window.addEventListener('message', (e: MessageEvent) => {
+    if (e.origin !== window.location.origin) return;
+    const d = e.data;
+    if (!d || d.source !== 'pinsay-ext-res') return;
+    const resolve = pending[d.id];
+    if (!resolve) return;
+    delete pending[d.id];
+    // status 0 = the background refused (allowlist) or its fetch failed. `new Response(...,
+    // {status: 0})` throws a RangeError (valid range is 200–599) and that used to surface as an
+    // uncaught error in the page; hand the widget a network-error Response instead (ok=false),
+    // which it already handles like any failed request.
+    const status = Number(d.status) || 0;
+    if (status < 200 || status > 599) { resolve(Response.error()); return; }
+    resolve(new Response(d.body, {
+      status,
+      headers: d.contentType ? { 'Content-Type': d.contentType } : {},
+    }));
+  });
+
+  w.__PINSAY_FETCH__ = (url: string, opts?: RequestInit): Promise<Response> => {
+    opts = opts || {};
+    return new Promise((resolve, reject) => {
+      const id = ++counter;
+      pending[id] = resolve;
+      const body = (opts as RequestInit).body;
+      if (typeof FormData !== 'undefined' && body instanceof FormData) {
+        // Every string field plus the first file under its own name (multipart intake: "payload" + "screenshot").
+        const fields: Record<string, string> = {};
+        let file: Blob | null = null;
+        let fileField = 'file';
+        body.forEach((v, k) => {
+          if (typeof v === 'string') fields[k] = v;
+          else if (!file) { file = v; fileField = k; }
+        });
+        const f = file as Blob | null;
+        const post = (base64: string) => window.postMessage({
+          source: 'pinsay-ext', kind: 'upload', id, url, base64,
+          filename: (f && (f as File).name) || 'screenshot',
+          contentType: (f && f.type) || 'application/octet-stream',
+          project: fields.project || cfg.project, fields, fileField,
+          auth: (opts!.headers as Record<string, string> | undefined)?.Authorization ?? null,
+        }, window.location.origin);
+        if (!f) { post(''); return; }
+        const reader = new FileReader();
+        reader.onload = () => post(String(reader.result).split(',')[1] || '');
+        reader.onerror = () => { delete pending[id]; reject(new Error('read failed')); };
+        reader.readAsDataURL(f);
+      } else {
+        const headers = (opts!.headers as Record<string, string>) || {};
+        const auth = !!(headers.Authorization || headers.authorization);
+        window.postMessage({
+          source: 'pinsay-ext', kind: 'fetch', id, url,
+          method: opts!.method || 'GET', headers,
+          body: typeof body === 'string' ? body : null, auth,
+        }, window.location.origin);
+      }
+    });
+  };
+
+  // Real-pixel screenshot of the visible tab, taken by the background (data:image/png URL), or null. The widget
+  // calls this when present and falls back to snapdom on null.
+  w.__PINSAY_CAPTURE_TAB__ = (): Promise<string | null> => new Promise((resolve) => {
+    const id = ++counter;
+    const timer = setTimeout(() => { delete pending[id]; resolve(null); }, 5000);
+    pending[id] = (r: Response) => {
+      clearTimeout(timer);
+      if (!r.ok) { resolve(null); return; }
+      r.text().then((t) => resolve(t.startsWith('data:image/') ? t : null), () => resolve(null));
+    };
+    window.postMessage({ source: 'pinsay-ext', kind: 'capture', id }, window.location.origin);
+  });
+
+  w.__PINSAY_CONFIG__ = {
+    server: cfg.server,
+    project: cfg.project,
+    environment: cfg.environment,
+    token: cfg.visitor || cfg.unclaimed ? undefined : PROXY_TOKEN,
+    // Only expose the display name — email and roleName are PII and not needed by the widget (1.3).
+    user: !cfg.visitor && !cfg.unclaimed && (cfg.displayName || cfg.userId)
+      ? { displayName: cfg.displayName, id: cfg.userId, isAdmin: !!cfg.isAdmin, isQuickAccess: !!cfg.isQuickAccess }
+      : undefined,
+    visitor: cfg.visitor ? true : undefined,
+    visitorEntry: cfg.visitor ? cfg.visitorEntry : undefined,
+    unclaimed: cfg.unclaimed ? true : undefined,
+    proxy: true,
+    // cssUrl intentionally omitted: with no override, the widget falls back to loading its
+    // stylesheet from `${server}/widget.css` on its own — same as the plain (non-extension) embed.
+    // snapdom stays bundled at the extension origin (changes rarely).
+    snapdomUrl: cfg.snapdomUrl,
+  };
+
+  // Load the live widget from the server — a plain page-context <script src>, exactly like the
+  // non-extension embed does. This is NOT extension-privileged remote code execution (the kind MV3's
+  // remote-code policy actually targets): it runs with the page's own privileges, same as any script
+  // tag a website could add itself. That's what makes a CSS tweak or a small widget fix a server-side
+  // deploy, live for every installed copy immediately, with no extension update/re-review needed.
+  const script = document.createElement('script');
+  script.src = `${cfg.server}/widget.js`;
+  script.defer = true;
+  document.head.appendChild(script);
+
+  // Mount the widget host — and KEEP it mounted. SPA frameworks (React/Vue/Angular) re-render
+  // and routinely evict a node appended to <body> (or replace <body> entirely) once they hydrate,
+  // so a one-shot append vanishes. Re-append whenever it goes missing; the custom-element
+  // definition (from widget.js) persists on the window, so re-adding the host is cheap.
+  //
+  // The extension's widget always wins over one the page embeds itself (a site that ships the
+  // PinSay snippet, like bassitedu.com): that element mounted before this ran, never saw
+  // __PINSAY_CONFIG__, and keeps its own project and sign-in. Remove page-owned hosts and mount
+  // ours, marked with data-pinsay-ext so it is never mistaken for the page's.
+  const EXT_ATTR = 'data-pinsay-ext';
+  const mount = (): void => {
+    document.querySelectorAll('pinsay-feedback').forEach((el) => {
+      if (!el.hasAttribute(EXT_ATTR)) el.remove();
+    });
+    if (!document.querySelector(`pinsay-feedback[${EXT_ATTR}]`)) {
+      const host = document.createElement('pinsay-feedback');
+      host.setAttribute(EXT_ATTR, '');
+      (document.body || document.documentElement).appendChild(host);
+    }
+  };
+  mount();
+  const observer = new MutationObserver(() => mount());
+  // Observe the document itself, so a page that replaces <html> (not only <body>) still gets the host back.
+  observer.observe(document, { childList: true, subtree: true });
+}

@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>PinSay</title><style>*{margin:0;padding:0;box-sizing:border-box}
+:root{--act:linear-gradient(135deg,#3b63e0,#0e7490);--brand:linear-gradient(135deg,#567bf7,#0ec7de);--ink:#0f172a;--muted:#5b6b82;--bi:#2f56d6}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.gt{background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+html,body{width:440px;height:280px;overflow:hidden}
+
+.stage{width:440px;height:280px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;position:relative;
+  background:radial-gradient(300px 200px at 50% 30%,rgba(86,123,247,.12),transparent),#fff}
+.stage::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:var(--brand)}
+.name{font-size:34px;font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1}
+.tag{font-size:15px;color:var(--muted);font-weight:600}
+.chip{margin-top:2px;font-size:11px;font-weight:700;color:var(--bi);background:rgba(86,123,247,.12);padding:5px 12px;border-radius:999px}</style></head><body><div class="stage"><svg class="" width="70" height="78" viewBox="6 2 52 58" fill="none" aria-hidden="true"><defs><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="56"><stop offset="0" stop-color="#567bf7"/><stop offset="1" stop-color="#0ec7de"/></linearGradient></defs><path d="M10 20C10 12.268 16.268 6 24 6H40C47.732 6 54 12.268 54 20V32C54 39.732 47.732 46 40 46H38L32 56L26 46H24C16.268 46 10 39.732 10 32V20Z" stroke="url(#g1)" stroke-width="4.5" stroke-linejoin="round"/><path d="M32 14Q32 26 44 26Q32 26 32 38Q32 26 20 26Q32 26 32 14Z" fill="url(#g1)"/></svg><div class="name">PinSay</div><div class="tag">Point at the UI. Ship it with AI.</div><div class="chip">Element-level feedback → code</div></div></body></html>

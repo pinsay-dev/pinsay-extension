@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PinSay</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --ps-action-gradient: linear-gradient(135deg, #3b63e0, #0e7490);
+      --ps-brand-gradient: linear-gradient(135deg, #567bf7, #0ec7de);
+      --ps-brand-ink: #2f56d6;
+      --ps-bg: #fff; --ps-text: #0f172a; --ps-muted: #5b6b82;
+      --ps-well: rgba(100,116,139,.06); --ps-hover: rgba(100,116,139,.12);
+      --ps-line: rgba(100,116,139,.32); --ps-line-soft: rgba(100,116,139,.16);
+      --ps-danger: #ef4444; --ps-danger-ink: #b91c1c; --ps-danger-bg: rgba(239,68,68,.10);
+      --ps-success-ink: #047857;
+      --ps-focus: #3b82f6; --ps-halo: rgba(86,123,247,.18); --ps-halo-focus: rgba(86,123,247,.14);
+      --ps-font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ps-brand-ink: #7dbaff;
+        --ps-bg: #0f172a; --ps-text: #e2e8f0; --ps-muted: #94a3b8;
+        --ps-well: rgba(148,163,184,.07); --ps-hover: rgba(148,163,184,.16);
+        --ps-line: rgba(148,163,184,.3); --ps-line-soft: rgba(148,163,184,.2);
+        --ps-danger-ink: #f87171; --ps-danger-bg: rgba(239,68,68,.16);
+        --ps-success-ink: #34d399;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--ps-bg); color: var(--ps-text); font-family: var(--ps-font-ui); font-size: 13px; line-height: 1.4; -webkit-font-smoothing: antialiased; }
+    h1 { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 700; letter-spacing: -.01em; }
+    .mark { flex: none; display: block; }
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--ps-muted); margin: 12px 0 4px; }
+    input, select { width: 100%; padding: 8px 10px; border: 1px solid transparent; border-radius: 10px; background: var(--ps-well); color: var(--ps-text); font: inherit; font-size: 13px; outline: none; transition: border-color 150ms, box-shadow 150ms; }
+    input::placeholder { color: var(--ps-muted); opacity: .8; }
+    input:hover, select:hover { border-color: var(--ps-line-soft); }
+    input:focus, select:focus { border-color: var(--ps-focus); box-shadow: 0 0 0 2px var(--ps-bg), 0 0 0 4px var(--ps-focus); }
+    button { width: 100%; height: 36px; padding: 0 12px; border: 0; border-radius: 12px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 12px; transition: box-shadow 150ms, background-color 150ms, opacity 150ms; }
+    button:focus-visible { outline: 2px solid var(--ps-focus); outline-offset: 2px; }
+    button:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+    .primary { background: var(--ps-action-gradient); color: #fff; }
+    .primary:hover:not(:disabled) { box-shadow: 0 0 0 4px var(--ps-halo); }
+    .ghost { background: var(--ps-hover); color: var(--ps-text); }
+    .ghost:hover:not(:disabled) { background: var(--ps-line-soft); }
+    .danger { background: var(--ps-danger-bg); color: var(--ps-danger-ink); }
+    .danger:hover:not(:disabled) { box-shadow: 0 0 0 3px var(--ps-danger-bg); }
+    .note { font-size: 11px; color: var(--ps-muted); margin-top: 8px; line-height: 1.45; }
+    a { color: var(--ps-brand-ink); cursor: pointer; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    a:focus-visible { outline: 2px solid var(--ps-focus); outline-offset: 2px; border-radius: 4px; }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+    body { width: 320px; padding: 16px; }
+    h1 { font-size: 15px; margin-bottom: 14px; }
+    .who { font-size: 13px; font-weight: 700; }
+    .dom { font-size: 12px; color: var(--ps-muted); word-break: break-all; margin-top: 2px; }
+    .err { color: var(--ps-danger-ink); font-size: 12px; margin-top: 8px; min-height: 14px; }
+    a { font-size: 12px; }
+    .bar { display: flex; justify-content: space-between; align-items: center; }
+    .ws { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--ps-line-soft); }
+    .ws label { margin-top: 0; }
+    select:disabled { opacity: .6; cursor: progress; }
+    select[aria-busy="true"] { cursor: progress; }
+    .secondary { margin-top: 6px; }
+    .note.spaced { margin-top: 12px; }
+    .hint { font-size: 11px; color: var(--ps-muted); margin-top: 6px; line-height: 1.45; }
+    .hint[data-tone="ok"] { color: var(--ps-success-ink); }
+    .foot { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--ps-line-soft); font-size: 11px; color: var(--ps-muted); }
+    .foot a { font-size: 11px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <h1><svg class="mark" width="22" height="22" viewBox="6 2 52 58" fill="none" aria-hidden="true"><defs><linearGradient id="pg" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="56"><stop offset="0" stop-color="#567bf7"/><stop offset="1" stop-color="#0ec7de"/></linearGradient></defs><path d="M10 20C10 12.268 16.268 6 24 6H40C47.732 6 54 12.268 54 20V32C54 39.732 47.732 46 40 46H38L32 56L26 46H24C16.268 46 10 39.732 10 32V20Z" stroke="url(#pg)" stroke-width="4.5" stroke-linejoin="round"/><path d="M32 14Q32 26 44 26Q32 26 32 38Q32 26 20 26Q32 26 32 14Z" fill="url(#pg)"/></svg><span id="brand">PinSay Feedback</span></h1>
+  <div id="root">Loading…</div>
+  <div class="err" id="err" role="alert"></div>
+  <footer class="foot" id="foot"></footer>
+  <script src="popup.js"></script>
+</body>
+</html>

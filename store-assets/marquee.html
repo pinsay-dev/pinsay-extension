@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>PinSay</title><style>*{margin:0;padding:0;box-sizing:border-box}
+:root{--act:linear-gradient(135deg,#3b63e0,#0e7490);--brand:linear-gradient(135deg,#567bf7,#0ec7de);--ink:#0f172a;--muted:#5b6b82;--bi:#2f56d6}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.gt{background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+html,body{width:1400px;height:560px;overflow:hidden}
+
+.stage{width:1400px;height:560px;display:grid;grid-template-columns:1.05fr 1fr;background:radial-gradient(700px 450px at 78% 45%,rgba(86,123,247,.14),transparent),#fff;position:relative}
+.left{padding:70px 64px;display:flex;flex-direction:column;justify-content:center;gap:22px}
+.brand{display:flex;align-items:center;gap:14px}.brand .n{font-size:34px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+h1{font-size:52px;line-height:1.08;color:var(--ink);letter-spacing:-.02em;font-weight:800}
+p{font-size:20px;color:var(--muted);line-height:1.5;max-width:560px}
+.chip{align-self:flex-start;font-size:14px;font-weight:700;color:#fff;background:var(--act);padding:8px 16px;border-radius:999px}
+.right{position:relative}
+.win{position:absolute;left:20px;top:80px;width:600px;height:400px;background:#fff;border:1px solid rgba(100,116,139,.22);border-radius:16px;box-shadow:0 30px 70px rgba(2,6,23,.16);overflow:hidden}
+.bar{display:flex;gap:7px;padding:20px}.bar span{width:12px;height:12px;border-radius:50%;background:#e2e8f0}
+.line{height:12px;border-radius:6px;background:#f1f5f9;position:absolute;left:32px}
+.btn{position:absolute;border:0;left:32px;top:110px;font:600 16px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff;background:var(--act);border-radius:12px;padding:14px 20px}
+.ring{position:absolute;left:25px;top:103px;width:146px;height:50px;border:2px solid #567bf7;border-radius:16px}
+
+.tbar{position:absolute;display:inline-flex;align-items:center;gap:8px;height:48px;padding-inline:8px;border-radius:16px;background:rgba(255,255,255,.9);box-shadow:0 12px 32px -8px rgba(15,23,42,.28);color:#5b6b82}
+.tbar::before,.cbox::before{content:"";position:absolute;inset:0;padding:1px;border-radius:inherit;opacity:.35;background:var(--brand);mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor}
+.grip{display:flex;padding-inline:4px 2px}
+.tprim{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:var(--act)}
+.tbtn{min-width:32px;height:32px;padding-inline:8px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.tbtn.ico{width:32px;padding:0}
+.cnt{min-width:18px;height:18px;padding-inline:5px;border-radius:9px;background:rgba(86,123,247,.12);color:var(--bi);font:600 11px/18px ui-monospace,SFMono-Regular,Menlo,monospace;text-align:center}
+.tdiv{width:1px;height:20px;background:linear-gradient(to bottom,transparent,rgba(100,116,139,.35),transparent)}
+.cbox{position:absolute;width:340px;padding:16px;border-radius:16px;background:rgba(255,255,255,.96);color:var(--ink);font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 24px 48px -12px rgba(15,23,42,.35);display:flex;flex-direction:column;gap:12px}
+.notch{position:absolute;left:-9px;top:40px}
+.chead{display:flex;align-items:center;gap:6px;min-height:28px}
+.ctitle{display:flex;align-items:center;gap:6px;flex:1;font-size:13px;font-weight:600;white-space:nowrap}
+.tagseg{display:inline-flex;align-items:stretch;height:22px;border-radius:6px;background:rgba(86,123,247,.12);color:var(--bi)}
+.tagseg .tc{padding-inline:8px;font:500 11px/22px ui-monospace,SFMono-Regular,Menlo,monospace}
+.tagseg .sb{width:20px;display:inline-flex;align-items:center;justify-content:center;border-left:1px solid rgba(86,123,247,.25)}
+.cacts{display:flex;color:#5b6b82}.cacts span{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center}
+.csrc{display:flex;align-items:center;gap:6px;margin-top:-6px;color:#5b6b82;font:11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+.cfield{position:relative;border-radius:12px;background:rgba(100,116,139,.06);padding:10px 12px;font-size:14px;line-height:1.4;min-height:76px}
+.caret{display:inline-block;width:1.5px;height:16px;background:#3b82f6;vertical-align:-3px;margin-left:1px}
+.copts{display:flex;gap:6px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:999px;border:1px solid rgba(100,116,139,.32);font-size:12px;font-weight:500;color:#5b6b82;white-space:nowrap}
+.pill.on{background:rgba(86,123,247,.14);border-color:rgba(86,123,247,.45);color:var(--bi)}
+.cfoot{display:flex;justify-content:flex-end;align-items:center;gap:8px}
+.cancel{height:34px;padding:0 12px;border-radius:10px;font-size:13px;font-weight:500;color:#5b6b82;display:inline-flex;align-items:center}
+.add{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 8px 0 14px;border-radius:12px;background:var(--act);color:#fff;font-size:13px;font-weight:600}
+.add kbd{padding:3px 5px;border-radius:5px;background:rgba(255,255,255,.22);font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace}</style></head><body><div class="stage"><div class="left"><div class="brand"><svg class="" width="56" height="62" viewBox="6 2 52 58" fill="none" aria-hidden="true"><defs><linearGradient id="g4" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="56"><stop offset="0" stop-color="#567bf7"/><stop offset="1" stop-color="#0ec7de"/></linearGradient></defs><path d="M10 20C10 12.268 16.268 6 24 6H40C47.732 6 54 12.268 54 20V32C54 39.732 47.732 46 40 46H38L32 56L26 46H24C16.268 46 10 39.732 10 32V20Z" stroke="url(#g4)" stroke-width="4.5" stroke-linejoin="round"/><path d="M32 14Q32 26 44 26Q32 26 32 38Q32 26 20 26Q32 26 32 14Z" fill="url(#g4)"/></svg><span class="n">PinSay</span></div>
+<h1>Turn UI feedback<br>into code — <span class="gt">with AI</span></h1>
+<p>Anyone clicks an element on your running app and leaves a comment. Developers hand the queue to any AI tool, which applies the change to the real source.</p>
+<span class="chip">Works on any site · browser extension</span></div>
+<div class="right"><div class="win"><div class="bar"><span></span><span></span><span></span></div>
+<div class="line" style="top:70px;width:200px"></div><span class="btn">Get started</span><span class="ring"></span>
+<div class="line" style="top:200px;width:300px"></div><div class="line" style="top:226px;width:220px"></div><div class="line" style="top:252px;width:260px"></div>
+<div style="position:absolute;left:250px;top:50px;transform:scale(.84);transform-origin:0 0"><div class="cbox"><svg class="notch" width="10" height="20" viewBox="0 0 10 20"><path d="M10 .5L1 10l9 9.5z" fill="rgba(255,255,255,.96)"/><path d="M9.4 .4L.9 10l8.5 9.6" fill="none" stroke="#567bf7" stroke-opacity=".5"/></svg>
+<div class="chead"><div class="ctitle"><svg class="" width="16" height="18" viewBox="6 2 52 58" fill="none" aria-hidden="true"><defs><linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="56"><stop offset="0" stop-color="#567bf7"/><stop offset="1" stop-color="#0ec7de"/></linearGradient></defs><path d="M10 20C10 12.268 16.268 6 24 6H40C47.732 6 54 12.268 54 20V32C54 39.732 47.732 46 40 46H38L32 56L26 46H24C16.268 46 10 39.732 10 32V20Z" stroke="url(#g2)" stroke-width="4.5" stroke-linejoin="round"/><path d="M32 14Q32 26 44 26Q32 26 32 38Q32 26 20 26Q32 26 32 14Z" fill="url(#g2)"/></svg><span>Comment on</span><span class="tagseg"><span class="tc">button</span><span class="sb"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M4 10l4-4 4 4"/></svg></span><span class="sb"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M4 6l4 4 4-4"/></svg></span></span></div>
+<div class="cacts"><span><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><rect x="3.2" y="7" width="9.6" height="6.6" rx="1.8"/><path d="M5.4 7V5a2.6 2.6 0 0 1 4.9-1.2"/></svg></span><span><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M4 4l8 8M12 4l-8 8"/></svg></span></div></div>
+<div class="csrc"><svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M9.6 2H4.6a1.4 1.4 0 0 0-1.4 1.4v9.2a1.4 1.4 0 0 0 1.4 1.4h6.8a1.4 1.4 0 0 0 1.4-1.4V5.2zM9.6 2v3.2h3.2"/></svg><span>src/components/Hero.tsx:42</span></div>
+<div class="cfield">Make this button 24px tall and use the primary token.<span class="caret"></span></div>
+<div class="copts"><span class="pill"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M8 3.2v9.6M3.2 8h9.6"/></svg>Prompt</span><span class="pill on"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M2 5.6a1.4 1.4 0 0 1 1.4-1.4h1.3l.9-1.4h4.8l.9 1.4h1.3A1.4 1.4 0 0 1 14 5.6v6.2a1.4 1.4 0 0 1-1.4 1.4H3.4A1.4 1.4 0 0 1 2 11.8z"/><circle cx="8" cy="8.6" r="2.2"/></svg>Screenshot<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M3.4 8.4l3 3 6.2-6.6"/></svg></span><span class="pill"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M5.6 5.2a2.4 2.4 0 0 1 4.8 0M5 6.2h6v3.4a3 3 0 0 1-6 0zM2.4 7.6H5M11 7.6h2.6M2.8 12l2.3-1.2M13.2 12l-2.3-1.2M2.8 4l2.3 1.2M13.2 4l-2.3 1.2M8 6.6v6"/></svg>Bug</span><span class="pill"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6"/><circle cx="10" cy="4.5" r="1.5"/><circle cx="6" cy="11.5" r="1.5"/></svg>Fields</span></div>
+<div class="cfoot"><span class="cancel">Cancel</span><span class="add">Add<kbd>⌘↵</kbd></span></div></div></div>
+<div style="position:absolute;right:20px;bottom:20px;width:0;height:0"><div class="tbar" style="right:0;bottom:0"><span class="grip"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><circle cx="6" cy="3.6" r="1.1"/><circle cx="10" cy="3.6" r="1.1"/><circle cx="6" cy="8" r="1.1"/><circle cx="10" cy="8" r="1.1"/><circle cx="6" cy="12.4" r="1.1"/><circle cx="10" cy="12.4" r="1.1"/></svg></span>
+<span class="tprim"><svg viewBox="0 0 16 16" width="18" height="18" fill="none"><path d="M32 14Q32 26 44 26Q32 26 32 38Q32 26 20 26Q32 26 32 14Z" fill="#fff" transform="translate(8 8) scale(.44) translate(-32 -26)"/><path d="M8 .8v1.6M8 13.6v1.6M.8 8h1.6M13.6 8h1.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+<span class="tbtn"><svg viewBox="4 2 56 56" width="16" height="16" fill="none" stroke="currentColor" stroke-width="6.2" stroke-linejoin="round" stroke-linecap="round"><path d="M10 20C10 12.268 16.268 6 24 6H40C47.732 6 54 12.268 54 20V32C54 39.732 47.732 46 40 46H38L32 56L26 46H24C16.268 46 10 39.732 10 32V20Z"/></svg><span class="cnt">3</span></span>
+<span class="tbtn ico"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M4.2 6.6a3.8 3.8 0 0 1 7.6 0c0 2.9 1.2 3.9 1.2 3.9H3s1.2-1 1.2-3.9z"/><path d="M6.6 12.8a1.6 1.6 0 0 0 2.8 0"/></svg></span>
+<span class="tdiv"></span>
+<span class="tbtn ico"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/></svg></span>
+<span class="tbtn ico"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true" ><path d="M2 8s2.4-4.2 6-4.2S14 8 14 8s-2.4 4.2-6 4.2S2 8 2 8z"/><circle cx="8" cy="8" r="1.8"/><path d="M2.6 2.6l10.8 10.8"/></svg></span></div></div></div></div></div></body></html>
