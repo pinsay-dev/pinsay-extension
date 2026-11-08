@@ -105,7 +105,7 @@ function keychainFailure(target, missing) {
   if (target === 'chrome') {
     return `Keychain service "${KEYCHAIN.chrome.service}" is missing ${missing.join(', ')} — run npm run cws:auth.`;
   }
-  return `Keychain service "${KEYCHAIN.firefox.service}" is missing ${missing.join(', ')} — add them once with security add-generic-password (README).`;
+  return `Keychain service "${KEYCHAIN.firefox.service}" is missing ${missing.join(', ')} — add them once with security add-generic-password (docs/RELEASING.md in the PinSay monorepo).`;
 }
 
 async function checkKeychain(target) {

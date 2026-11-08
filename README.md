@@ -92,18 +92,11 @@ from the widget itself, via the Performance API.
 
 ## Install (reviewers)
 
-The extension is published on the **Chrome Web Store**. The listing URL is a server setting — the
-super admin sets it in the dashboard under **Settings → Extension → Chrome Web Store URL** — and every
-surface reads it live from `GET /api/branding` (`extension.storeUrl`), so a new listing URL never
-requires a code change or a CLI release:
+Install from the store links above, then click the toolbar icon and sign in with your PinSay account → open the
+app, click the toolbar icon, pick the project, **Activate**.
 
-- the landing page's "Add to Chrome" button;
-- the dashboard **Install guide → Chrome extension** method;
-- `npx @pinsay/cli init` — the Chrome extension is the default since 0.9.0 (no flag needed;
-  `npx @pinsay/cli embed` puts the widget in the code). The CLI skips code injection and prints the install steps.
-
-Reviewer steps: install from the store link → click the toolbar icon and sign in with your PinSay
-account → open the app, click the toolbar icon, pick the project, **Activate**.
+`npx @pinsay/cli init` sets a repository up for the extension by default (since CLI 0.9.0; `npx @pinsay/cli embed`
+puts the widget in the code instead).
 
 ## Develop
 
@@ -123,9 +116,7 @@ The extension talks only to `https://app.pinsay.dev` (since 0.4.0 there is no se
 
 ### Build from source (this repository on its own)
 
-Inside PinSay's main repository the build takes the bundled screenshot library from the server folder
-(`../API/wwwroot/vendor/snapdom.js`). In this repository on its own, fetch the same file first — PinSay serves
-it unchanged (snapdom v2.12.9, MIT):
+Before building, fetch the screenshot library PinSay serves (snapdom v2.12.9, MIT):
 
 ```bash
 mkdir -p vendor-src && curl -fsSL -o vendor-src/snapdom.js https://app.pinsay.dev/vendor/snapdom.js
@@ -150,99 +141,6 @@ node build.mjs --target chrome            # or edge / firefox
    change appears with no extension rebuild.
 6. **Deactivate** — Deactivate on the tab → it reloads with its original CSP restored.
 
-## Publish an update to the stores
-
-Only shell changes (popup, background, manifest, icons) need a release — widget changes
-ship through the server (see above). One command publishes to all three stores:
-`npm run publish` (`scripts/publish.mjs`) — Chrome delegates to `scripts/cws-publish.mjs`,
-Edge uses the Edge Add-ons API (v1.1), Firefox the AMO API (v5, including the source
-archive). Credentials live in the macOS Keychain, never in the repo.
-
-### One-time setup (CEO)
-
-Store credentials go into the macOS Keychain with `security add-generic-password` — the
-values are never written in the repo, never printed:
-
-1. **Chrome Web Store** (service `pinsay-cws`, used by `npm run cws:auth` +
-   `scripts/cws-publish.mjs`):
-   1. In [Google Cloud Console](https://console.developers.google.com): enable the **Chrome Web
-      Store API**, create an **External** OAuth consent screen with the CEO's Google account as a
-      **Test user**, and create an **OAuth client ID** of type **Desktop app**.
-   2. Store the client id and secret (placeholders below — never the real values):
-
-      ```bash
-      security add-generic-password -U -s pinsay-cws -a client_id -w '<YOUR_OAUTH_CLIENT_ID>'
-      security add-generic-password -U -s pinsay-cws -a client_secret -w '<YOUR_OAUTH_CLIENT_SECRET>'
-      ```
-
-   3. Fill in the store ids in `scripts/cws.config.json` (they are not secret; the `CWS_ITEM_ID` /
-      `CWS_PUBLISHER_ID` env vars override).
-   4. `npm run cws:auth` — opens Google's consent page once and saves the refresh token to the
-      Keychain (`pinsay-cws`).
-2. **Firefox Add-ons (AMO)** (service `pinsay-amo`): create API keys at
-   [addons.mozilla.org/developers/addon/api/key/](https://addons.mozilla.org/developers/addon/api/key/),
-   then:
-
-   ```bash
-   security add-generic-password -U -s pinsay-amo -a jwt-issuer -w '<AMO_KEY_ISSUER>'
-   security add-generic-password -U -s pinsay-amo -a jwt-secret -w '<AMO_KEY_SECRET>'
-   ```
-
-3. **Edge Add-ons** (service `pinsay-edge`): register the extension in
-   [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge) once (there is no API
-   to create a product) and create publishing API credentials; then store the client id, the API
-   key and the product id:
-
-   ```bash
-   security add-generic-password -U -s pinsay-edge -a client-id -w '<EDGE_CLIENT_ID>'
-   security add-generic-password -U -s pinsay-edge -a api-key -w '<EDGE_API_KEY>'
-   security add-generic-password -U -s pinsay-edge -a product-id -w '<EDGE_PRODUCT_ID>'
-   ```
-
-### Every release
-
-`npm run package` builds all three targets and writes `pinsay-ext-{chrome,edge,firefox}-<V>.zip`
-plus `pinsay-ext-source-<V>.zip` (the AMO source archive, with `SOURCE-BUILD.md`). Then:
-
-```bash
-cd extension
-# 1. bump "version" in manifest.json — a store only accepts a version higher than the live one
-# 2. add the release notes to BOTH changelogs: <h2 id="v<V>"> at the top of pinsay-landing/docs/extension-changelog.html, and "- **<V>** — …" at the top of § Changelog below
-npm ci && npm run typecheck && npm test               # fails if either changelog has no entry for <V>
-npm run package
-npm run publish -- --target all --dry-run    # checks Keychain, zips, manifest versions and
-                                             # scripts/published.json; makes no remote calls
-npm run publish -- --target all --submit     # uploads AND submits for review — needs the CEO's OK
-```
-
-`--target` also accepts a single store (`chrome`, `edge`, `firefox`); `--target all` runs
-chrome, then firefox, then edge, and stops at the first failure saying which targets were done.
-The command refuses a version that is already live: `scripts/published.json` (committed) records
-the last submitted version per store, and the stores themselves are asked where their APIs
-allow. After a successful `--submit` it updates `scripts/published.json` — commit it. Each
-store's review state is printed as the run goes.
-
-After the release commit is on main, update the public source mirror (from the monorepo root):
-`sh tools/sync-mirrors.sh pinsay-api/extension` (fast-forward push to `pinsay-dev/pinsay-extension`).
-
-Test the exact bundle first: `chrome://extensions` → Developer mode → **Load unpacked** →
-`extension/dist` (Edge: `dist-edge/`, Firefox: `dist-firefox/`), or drag the zip. `--submit`
-publishes to all users and puts the item into the store's review queue (it appears when the
-review passes). Firefox without `--submit` stops after AMO's validation — AMO has no
-unsubmitted upload state. The Firefox submission includes the source archive and build steps,
-as AMO requires for bundled code.
-
-Fallback: you can still upload the zips by hand in the [Chrome Web Store Developer
-Dashboard](https://chrome.google.com/webstore/devconsole/), Partner Center or
-[addons.mozilla.org](https://addons.mozilla.org/developers/) and press **Submit for review**
-there. If a listing URL ever changes, update **Settings → Extension → store URL** in the
-dashboard; nothing else needs to change.
-
-Listing notes kept from the first review: justify the `declarativeNetRequest` CSP-header removal
-(widget must load on CSP'd pages, only on user-activated tabs) and the remote `widget.js` load. If a
-review ever rejects remote code, the fallback is to **bundle** `widget.js` and inject it via
-`executeScript({world:'MAIN', files:[...]})` at the cost of pinning the widget to extension releases.
-
 ## Not in this MVP
 
 `data-component-source` mapping on third-party pages (applies fall back to snapshot/selector), and popup-driven re-auth on 401 (the
@@ -260,8 +158,8 @@ pull requests can't be merged directly. Found a bug or have an idea? Email suppo
 ## Changelog
 
 The same notes for users are on the public page
-[pinsay.dev/docs/extension-changelog.html](https://pinsay.dev/docs/extension-changelog.html)
-(`pinsay-landing/docs/extension-changelog.html`), which the popup footer links to. Every release adds its entry to both.
+[pinsay.dev/docs/extension-changelog.html](https://pinsay.dev/docs/extension-changelog.html), which the popup
+footer links to.
 
 - **0.8.5** — Security fix: scripts on a page where PinSay is active can no longer use your PinSay sign-in for anything beyond the feedback tool's own requests. Sign-in, account, workspace, key, member and billing requests from the page never carry your session, and sign-in tokens are removed from what the page receives.
 - **0.8.4** — **Leave feedback** on a site without visitor feedback keeps working when the page reloads or redirects by itself: the feedback tool comes back on the same site for 30 minutes, and the popup offers **Turn off on this site**. The card no longer says the site doesn't use PinSay (it may have a project with visitor feedback off) and says the page reloads once.

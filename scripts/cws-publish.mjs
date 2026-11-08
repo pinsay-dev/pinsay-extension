@@ -243,7 +243,7 @@ async function main() {
       !refreshToken && 'refresh_token',
     ].filter(Boolean);
     if (missingKeys.length > 0) {
-      die(`error: Keychain service "${SERVICE}" is missing ${missingKeys.join(', ')} — run npm run cws:auth (client_id/client_secret setup: README).`);
+      die(`error: Keychain service "${SERVICE}" is missing ${missingKeys.join(', ')} — run npm run cws:auth (client_id/client_secret setup: docs/RELEASING.md in the PinSay monorepo).`);
     }
     console.log('dry-run OK — no remote calls made.');
     console.log(`  ids:      item ${itemId}, publisher ${publisherId} (${idSource})`);

@@ -38,7 +38,7 @@ Tip: reuse the icons uploaded to the Branding page (`pwa192`/`iconSquare`) downs
 ```bash
 cd extension && npm run build          # → dist/
 # Local test: chrome://extensions → reload the unpacked extension (⟳)
-# Publish: see README.md § Publish an update (bump manifest version, zip dist/, upload in the Developer Dashboard,
+# Publish: see docs/RELEASING.md § Browser extension (PinSay monorepo) (bump manifest version, zip dist/, upload in the Developer Dashboard,
 #          then update Settings → Extension → Chrome Web Store URL if the listing URL changed)
 #          (the store name/icon/screenshots are edited in the listing, separately from the zip).
 ```
