@@ -56,7 +56,7 @@ const ORDER = ['chrome', 'firefox', 'edge'];
 const POLL_INTERVAL_MS = 5_000;
 const POLL_TIMEOUT_MS = 5 * 60_000;
 const FETCH_TIMEOUT_MS = 10 * 60_000;
-// The Firefox short description, from store-assets/STORE_LISTING.md § Firefox Add-ons (P2-T11).
+// The Firefox short description, from brand/store-listings/browser-extension/STORE_LISTING.md § Firefox Add-ons (P2-T11).
 const AMO_SUMMARY =
   'Click any element on a running web app, leave a comment, and your AI agent applies it to the real source.';
 

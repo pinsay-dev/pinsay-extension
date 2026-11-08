@@ -23,12 +23,12 @@ for (const [target, { dir }] of Object.entries(TARGETS)) {
   report(zip);
 }
 
-// Source archive: tracked files of this folder (minus store-assets and zips) + vendored snapdom + build notes.
+// Source archive: tracked files of this folder (minus zips) + vendored snapdom + build notes.
 const sourceZip = `pinsay-ext-source-${version}.zip`;
 const tmp = mkdtempSync(resolve(tmpdir(), 'pinsay-ext-src-'));
 try {
   const tarPath = resolve(tmp, 'src.zip');
-  run('git', ['archive', '--format=zip', '-o', tarPath, 'HEAD', '--', '.', ':!store-assets', ':!*.zip']);
+  run('git', ['archive', '--format=zip', '-o', tarPath, 'HEAD', '--', '.', ':!*.zip']);
   const extra = resolve(tmp, 'extra');
   mkdirSync(resolve(extra, 'vendor-src'), { recursive: true });
   copyFileSync(resolve(root, '..', 'API', 'wwwroot', 'vendor', 'snapdom.js'), resolve(extra, 'vendor-src', 'snapdom.js'));
