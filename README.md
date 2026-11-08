@@ -90,58 +90,34 @@ console, fetch or XHR and sends nothing. When the widget's bug capture starts, i
 redaction, look-back window and caps) and the script stops. Failed page and resource loads (status ≥ 400) come
 from the widget itself, via the Performance API.
 
-## Install (reviewers)
+## Install
 
-Install from the store links above, then click the toolbar icon and sign in with your PinSay account → open the
-app, click the toolbar icon, pick the project, **Activate**.
+Install from the store links above, click the toolbar icon and sign in with your PinSay account. Then open your
+site, click the toolbar icon, pick the project and choose **Activate**.
 
-`npx @pinsay/cli init` sets a repository up for the extension by default (since CLI 0.9.0; `npx @pinsay/cli embed`
-puts the widget in the code instead).
+`npx @pinsay/cli init` sets a repository up for the extension by default (`npx @pinsay/cli embed` puts the widget
+in your app's code instead).
 
-## Develop
+## Build from source
 
-```bash
-cd extension            # or the root of this repository
-npm install              # Node >= 22 (repo uses node@26)
-npm run build            # Chrome → extension/dist (same as: node build.mjs --target chrome)
-node build.mjs --target edge      # → extension/dist-edge
-node build.mjs --target firefox   # → extension/dist-firefox
-# Chrome: chrome://extensions → Developer mode → Load unpacked → select extension/dist
-# Edge: edge://extensions → Load unpacked → dist-edge/
-# Firefox: about:debugging → This Firefox → Load Temporary Add-on → dist-firefox/manifest.json
-npm run watch            # rebuild on change (reload the extension after shell changes)
-```
-
-The extension talks only to `https://app.pinsay.dev` (since 0.4.0 there is no server setting).
-
-### Build from source (this repository on its own)
-
-Before building, fetch the screenshot library PinSay serves (snapdom v2.12.9, MIT):
+Before building, fetch the screenshot library PinSay serves (snapdom v2.12.9, MIT). Node 22 or later.
 
 ```bash
 mkdir -p vendor-src && curl -fsSL -o vendor-src/snapdom.js https://app.pinsay.dev/vendor/snapdom.js
 npm ci && npm run typecheck && npm test   # the two pinsay.dev changelog-page tests are skipped here
-node build.mjs --target chrome            # or edge / firefox
+npm run build                     # Chrome → dist/ (same as: node build.mjs --target chrome)
+node build.mjs --target edge      # → dist-edge/
+node build.mjs --target firefox   # → dist-firefox/
+npm run watch                     # rebuild on change (reload the extension after shell changes)
 ```
 
-## Manual verification (E2E)
+Load it: Chrome `chrome://extensions` → Developer mode → **Load unpacked** → `dist/`; Edge `edge://extensions` →
+**Load unpacked** → `dist-edge/`; Firefox `about:debugging` → This Firefox → **Load Temporary Add-on** →
+`dist-firefox/manifest.json`.
 
-1. **Auth once** — click the toolbar icon → sign in with a PinSay account. The popup should show
-   your name; the token lives in `chrome.storage.session` (never in any page).
-2. **Plain site** — open e.g. `https://example.com`, set a project key, **Activate**. The tab
-   reloads once and the PinSay launcher appears, already authenticated (no login prompt). Leave a
-   comment → it appears in the dashboard under that project (self-registers).
-3. **Strict-CSP site** — repeat on a site that sends a `Content-Security-Policy` (e.g. GitHub). The
-   widget still loads (CSP stripped for the tab) and the comment POST is carried by the **background
-   worker** (visible as a request from the service worker, not the page).
-4. **Project match** — open a site whose URL is one of a project's URLs (app or environment URL) →
-   the popup preselects that project with "Matches this site's URL." Reopen the popup on a site where
-   you activated a project → that project is pre-filled ("Last used on this site.").
-5. **Widget auto-update** — deploy a widget change to the server, reload the activated tab → the
-   change appears with no extension rebuild.
-6. **Deactivate** — Deactivate on the tab → it reloads with its original CSP restored.
+The extension talks only to `https://app.pinsay.dev`.
 
-## Not in this MVP
+## Known limitations
 
 `data-component-source` mapping on third-party pages (applies fall back to snapshot/selector), and popup-driven re-auth on 401 (the
 widget currently falls back to its own login modal).
