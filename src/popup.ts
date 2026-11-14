@@ -1,4 +1,5 @@
 import { projectOptionsHtml } from './project-options';
+import { guideProgress, type GuideState } from './guide';
 import { SERVER, hostnameOf, type BgRequest, type StoredUser, type ExtProject, type WorkspaceChoice, type ExtEnvironment } from './shared';
 import { chooseProject, type ProjectChoice } from './match';
 import { siteName, pickEnvironment } from './slug';
@@ -23,6 +24,19 @@ function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 }
 function err(msg: string) { errEl.textContent = msg; }
+
+/** The first-comment guide the dashboard started (set by render() from getState; null when none or expired). */
+let guideState: GuideState | null = null;
+type GuideStep = { text: string; state: 'done' | 'current' | 'todo' };
+function guideBox(steps: GuideStep[]): string {
+  return `<section class="guide" aria-label="${esc(t('guideTitle'))}"><h2>${esc(t('guideTitle'))}</h2><ol>` +
+    steps.map((s) => `<li data-state="${s.state}"${s.state === 'current' ? ' aria-current="step"' : ''}>${esc(s.text)}</li>`).join('') +
+    `</ol><a id="guide-dismiss" href="#">${esc(t('guideDismiss'))}</a></section>`;
+}
+function bindGuideDismiss() {
+  const a = document.getElementById('guide-dismiss');
+  if (a) a.onclick = async (e) => { e.preventDefault(); await send({ type: 'guideDismiss' }); guideState = null; await render(); };
+}
 
 /** 2026-10-28: the popup's text for a throttled answer (this address vs the network), wait in minutes. */
 function limitMessage(status: string, seconds: number | null): string {
@@ -54,12 +68,14 @@ type PopupState = {
   pendingSignup: { email: string; sentAt: number; flow: 'sign-in' | 'sign-up' } | null; postSignup: boolean;
   pendingChoice: { workspaces: WorkspaceChoice[]; selectionToken: string; email: string } | null;
   authOutcome: { status: string; email: string } | null;
+  guide?: GuideState | null;
 };
 
 async function render() {
   err('');
   const state = await send<PopupState>({ type: 'getState' });
   await loadProduct();
+  guideState = state.guide ?? null;
   // A code sign-in finished while the popup was closed: show its picker or its message (kept by the background).
   if (!state.hasToken && state.pendingChoice) return renderChooseWorkspace(state.pendingChoice.workspaces, state.pendingChoice.selectionToken);
   if (!state.hasToken && state.authOutcome) {
@@ -346,7 +362,14 @@ async function renderAuth(prefillEmail = '', mode: 'code' | 'password' = 'code')
   const rawUrl = tab?.url || '';
   const inviteToken = /^https?:/.test(rawUrl) ? inviteTokenFromUrl(rawUrl) : null;
   const codeMode = mode === 'code';
+  const g = guideState;
+  const guideHtml = g ? guideBox([
+    { text: t('guideSignIn'), state: 'current' },
+    { text: t('guideChoose', { project: g.projectName }), state: 'todo' },
+    { text: t('guideActivate'), state: 'todo' },
+  ]) : '';
   setView(`
+    ${guideHtml}
     ${inviteToken ? `
     <div class="hint" data-tone="ok" id="invite-detected">${esc(t('inviteDetected'))}</div>
     <button class="primary" id="use-invite">${esc(t('useInvitation'))}</button>` : ''}
@@ -362,6 +385,7 @@ async function renderAuth(prefillEmail = '', mode: 'code' | 'password' = 'code')
     <button class="ghost secondary" id="create-account">${esc(t('createAccount'))}</button>
     <div class="note">${esc(t('signInNote'))}</div>
     <div class="note">${esc(t('inviteReentryHint'))}</div>`);
+  bindGuideDismiss();
   focusById(!codeMode && prefillEmail ? 'password' : 'email');
   const typedEmail = () => (document.getElementById('email') as HTMLInputElement).value.trim();
   if (inviteToken) {
@@ -584,6 +608,8 @@ async function renderMain(user: StoredUser | null, postSignup = false) {
   };
   // Set after "+ Add project" succeeds, so the new project is selected on the redraw.
   let createdKey = '';
+  // The project the user picked in this popup session (a guide's Choose step counts only this).
+  let pickedKey = '';
 
   // Which project the tab runs now, and what the main button will do with the selected one: the
   // popup used to say "Switch to selected project" even when that project was already active.
@@ -606,7 +632,8 @@ async function renderMain(user: StoredUser | null, postSignup = false) {
       : isQuickAccess
         ? (projects[0] ? { key: projects[0].key, source: 'matched' } : { key: '', source: 'none' })
         : chooseProject(projects, url, remembered);
-    const selectedKey = choice.key;
+    // While a guide is active, nothing is preselected: the user picks (D6). A project created here still counts.
+    const selectedKey = guideState && choice.source !== 'created' ? pickedKey : choice.key;
     const hint = hints[choice.source];
     const showUnclaimed = choice.source === 'none' && unclaimedEligible(url);
     // Matched projects first in the suggestions (all tied candidates when ambiguous), then the rest.
@@ -614,9 +641,24 @@ async function renderMain(user: StoredUser | null, postSignup = false) {
     const ordered = [...projects.filter((p) => firstKeys.includes(p.key)), ...projects.filter((p) => !firstKeys.includes(p.key))];
     const opts = projectOptionsHtml(ordered, selectedKey);
 
+    const g = guideState;
+    let guideHtml = '';
+    if (g) {
+      const p = guideProgress(g, choice.source === 'created' ? choice.key : pickedKey, tabState.active ? (tabState.remembered?.project ?? null) : null);
+      const steps: GuideStep[] = [
+        { text: t('guideSignedIn'), state: 'done' },
+        { text: t('guideChoose', { project: g.projectName }), state: p.choose },
+        { text: t('guideActivate'), state: p.activate },
+      ];
+      if (p.comment) steps.push({ text: t('guideComment'), state: 'current' });
+      const wrongSite = !!g.siteOrigin && g.siteOrigin !== origin;
+      guideHtml = guideBox(steps) + (wrongSite ? `<div class="note">${esc(t('guideOpenSite', { origin: g.siteOrigin! }))}</div>` : '');
+    }
+
     setView(`
       <div class="bar"><span class="who">${who}</span><a id="signout">Sign out</a></div>
       ${workspaceSwitcherHtml}
+      <div id="guide-wrap">${guideHtml}</div>
       ${extrasHtml()}
       ${postSignupHtml}
       <div class="dom">${esc(hostname)}</div>
@@ -647,6 +689,7 @@ async function renderMain(user: StoredUser | null, postSignup = false) {
 
     (document.getElementById('signout') as HTMLElement).onclick = signOut;
     bindWorkspaceSwitcher();
+    bindGuideDismiss();
     bindExtras();
     const uLeave = document.getElementById('u-leave') as HTMLButtonElement | null;
     if (uLeave && tab?.id !== undefined) uLeave.onclick = () => startUnclaimed(tab.id!, origin, uLeave);
@@ -656,6 +699,13 @@ async function renderMain(user: StoredUser | null, postSignup = false) {
     const hintEl = document.getElementById('project-hint');
     const toggleBtn = document.getElementById('toggle') as HTMLButtonElement | null;
     if (projectInput) projectInput.addEventListener('change', () => {
+      pickedKey = projectInput.value.trim();
+      // The latest explicit pick supersedes the "just created" default (else the redraw resets the select to it).
+      createdKey = '';
+      if (guideState) {
+        draw();
+        return;
+      }
       if (hintEl) hintEl.hidden = projectInput.value.trim() !== selectedKey;
       if (toggleBtn) toggleBtn.textContent = toggleLabel(projectInput.value.trim());
     });

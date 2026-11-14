@@ -80,6 +80,14 @@ export const STRINGS = {
   backToSignIn: { en: 'Back to sign in', ar: 'العودة لتسجيل الدخول' },
   selectWorkspace: { en: 'Please select a workspace.', ar: 'يُرجى اختيار مساحة عمل.' },
   selectWorkspaceFailed: { en: 'Could not select the workspace.', ar: 'تعذّر اختيار مساحة العمل.' },
+  guideTitle: { en: 'Your first comment', ar: 'تعليقك الأول' },
+  guideSignIn: { en: 'Sign in with the same account you use on the PinSay dashboard.', ar: 'سجّل الدخول بنفس الحساب الذي تستخدمه في لوحة تحكم PinSay.' },
+  guideSignedIn: { en: 'Signed in', ar: 'تم تسجيل الدخول' },
+  guideChoose: { en: 'Choose “{project}” under Project.', ar: 'اختر «{project}» من قائمة المشروع.' },
+  guideActivate: { en: 'Click “Activate on this tab”.', ar: 'اضغط «Activate on this tab».' },
+  guideComment: { en: 'PinSay is on. Click Comment in the toolbar on your page, then click what you want to change.', ar: 'PinSay يعمل الآن. اضغط «تعليق» في شريط الأدوات على صفحتك، ثم اضغط على ما تريد تغييره.' },
+  guideOpenSite: { en: 'Open {origin} in this tab first.', ar: 'افتح {origin} في هذا التبويب أولًا.' },
+  guideDismiss: { en: 'Hide', ar: 'إخفاء' },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

@@ -49,6 +49,7 @@ const options = {
     'content-bridge': resolve(here, 'src/content-bridge.ts'),
     'early-capture': resolve(here, 'src/early-capture.ts'),
     popup: resolve(here, 'src/popup.ts'),
+    presence: resolve(here, 'src/presence.ts'),
   },
   outdir: OUT,
   bundle: true,

@@ -1,4 +1,5 @@
 // Shared constants + message contracts used across background / content / popup.
+import type { GuideState } from './guide';
 
 // The one PinSay server this extension talks to (no server choice since 0.4.0, same rule as the
 // CLI). To bring a choice back, read it here — every caller uses this constant.
@@ -17,6 +18,7 @@ export const LOCAL_KEYS = {
   pendingSignup: 'pendingSignup', // { pendingToken, email, sentAt, flow: 'sign-in' | 'sign-up' } while a magic-link sign-in / sign-up waits for its confirmation
   postSignup: 'postSignup', // { at } after a fresh sign-up, until the first activation
   visitorByDomain: 'visitorByDomain', // { [hostname]: { project } } sites activated in visitor mode (no team session)
+  guide: 'guide', // GuideState the dashboard started (first-comment guide), 24 h
 } as const;
 /** Where versions before 0.4.0 stored a user-chosen server; deleted on update (see background.ts). */
 export const LEGACY_SERVER_KEY = 'server';
@@ -104,7 +106,9 @@ export type BgRequest =
   | { type: 'extForgetSignup' }
   | { type: 'clearAuthOutcome' }
   | { type: 'extFirstWorkspace'; name?: string }
-  | { type: 'clearPostSignup' };
+  | { type: 'clearPostSignup' }
+  | { type: 'guideStart'; guide: GuideState }
+  | { type: 'guideDismiss' };
 
 // page (MAIN world, via content bridge) -> background: proxied API traffic
 export type ProxyRequest =

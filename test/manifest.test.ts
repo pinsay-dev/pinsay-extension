@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { manifestFor } from '../scripts/manifest.mjs';
+import { readFileSync } from 'node:fs';
+import { manifestFor, TARGETS } from '../scripts/manifest.mjs';
 
 const base = {
   manifest_version: 3,
@@ -32,4 +33,15 @@ test('manifestFor does not mutate the base', () => {
   const copy = structuredClone(base);
   manifestFor('firefox', base);
   assert.deepEqual(base, copy);
+});
+
+test('every target ships the presence content script on the dashboard only, host permissions unchanged', () => {
+  const real = JSON.parse(readFileSync(new URL('../manifest.json', import.meta.url), 'utf8'));
+  for (const target of Object.keys(TARGETS)) {
+    const m = manifestFor(target, real);
+    assert.deepEqual(m.content_scripts, [
+      { matches: ['https://app.pinsay.dev/*'], js: ['presence.js'], run_at: 'document_start' },
+    ]);
+    assert.deepEqual(m.host_permissions, ['https://app.pinsay.dev/*', 'https://api.pinsay.dev/*']);
+  }
 });

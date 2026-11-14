@@ -9,6 +9,7 @@ import { injectMain } from './inject-main';
 import { extensionEnv } from './env';
 import { signupStatusFromResponse, magicStatusFromResponse, freshPendingChoice, freshAuthOutcome, type SignupStatus } from './signup';
 import { LANG } from './i18n';
+import { parseGuideStart, guideActive, type GuideState } from './guide';
 import { matchProxyRoute, routeAuthorization, redactCredentials, type ProxyRoute } from './proxy-policy';
 import { uploadForm } from './upload-form';
 import { tokenExpired } from './session';
@@ -283,6 +284,10 @@ async function runActivationOnce(m: { tabId: number; hostname: string; origin: s
   }
   await setStaged(null);
   recentlyActivated.set(m.tabId, { project: m.project, at: Date.now() });
+  const storedGuide = (await chrome.storage.local.get(LOCAL_KEYS.guide))[LOCAL_KEYS.guide] as GuideState | undefined;
+  if (guideActive(storedGuide, Date.now()) && storedGuide.projectKey === m.project) {
+    await chrome.storage.local.set({ [LOCAL_KEYS.guide]: { ...storedGuide, activatedAt: Date.now() } });
+  }
   await activate(m.tabId, m.hostname, m.project, m.environment);
   return { ok: true };
 }
@@ -729,14 +734,25 @@ chrome.runtime.onMessage.addListener((msg: BgRequest | ProxyRequest, sender, sen
         const authOutcome = hasToken ? null : freshAuthOutcome(kept[SESSION_KEYS.authOutcome], now);
         if (kept[SESSION_KEYS.authOutcome]) await chrome.storage.session.remove(SESSION_KEYS.authOutcome); // one-shot
         if (kept[SESSION_KEYS.pendingChoice] && !pendingChoice) await chrome.storage.session.remove(SESSION_KEYS.pendingChoice); // expired or junk
+        const storedGuide = (await chrome.storage.local.get(LOCAL_KEYS.guide))[LOCAL_KEYS.guide] as GuideState | undefined;
+        const guide = guideActive(storedGuide, now) ? storedGuide : null;
+        if (storedGuide && !guide) await chrome.storage.local.remove(LOCAL_KEYS.guide);
         return {
-          user, hasToken,
+          user, hasToken, guide,
           pendingSignup: pending ? { email: pending.email, sentAt: pending.sentAt, flow: pending.flow } : null,
           postSignup,
           pendingChoice: pendingChoice ? { workspaces: pendingChoice.workspaces, selectionToken: pendingChoice.selectionToken, email: pendingChoice.email } : null,
           authOutcome,
         };
       }
+      case 'guideStart': {
+        if (!sender.url?.startsWith('https://app.pinsay.dev/')) return { ok: false };
+        const guide = parseGuideStart({ source: 'pinsay-dashboard', kind: 'guide-start', ...m.guide }, Date.now());
+        if (!guide) return { ok: false };
+        await chrome.storage.local.set({ [LOCAL_KEYS.guide]: guide });
+        return { ok: true };
+      }
+      case 'guideDismiss': { await chrome.storage.local.remove(LOCAL_KEYS.guide); return { ok: true }; }
       case 'clearPostSignup': { await chrome.storage.local.remove(LOCAL_KEYS.postSignup); return { ok: true }; }
       case 'signupEnabled': {
         const r = await apiFetch('/api/auth/signup-enabled', { method: 'GET' });

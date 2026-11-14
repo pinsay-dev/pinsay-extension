@@ -64,6 +64,12 @@
     select[aria-busy="true"] { cursor: progress; }
     .secondary { margin-top: 6px; }
     .note.spaced { margin-top: 12px; }
+    .guide { border: 1px solid var(--ps-line); border-radius: 8px; padding: 8px 10px; margin: 8px 0; }
+    .guide h2 { font-size: 12px; margin: 0 0 4px; }
+    .guide ol { margin: 0; padding-inline-start: 18px; }
+    .guide li { font-size: 12px; margin: 2px 0; }
+    .guide li[data-state=done] { opacity: .65; text-decoration: line-through; }
+    .guide li[data-state=current] { font-weight: 600; }
     .hint { font-size: 11px; color: var(--ps-muted); margin-top: 6px; line-height: 1.45; }
     .hint[data-tone="ok"] { color: var(--ps-success-ink); }
     .foot { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--ps-line-soft); font-size: 11px; color: var(--ps-muted); }
@@ -72,7 +78,7 @@
   </style>
 </head>
 <body>
-  <h1><svg class="mark" width="22" height="22" viewBox="6 2 52 58" fill="none" aria-hidden="true"><defs><linearGradient id="pg" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="56"><stop offset="0" stop-color="#567bf7"/><stop offset="1" stop-color="#0ec7de"/></linearGradient></defs><path d="M10 20C10 12.268 16.268 6 24 6H40C47.732 6 54 12.268 54 20V32C54 39.732 47.732 46 40 46H38L32 56L26 46H24C16.268 46 10 39.732 10 32V20Z" stroke="url(#pg)" stroke-width="4.5" stroke-linejoin="round"/><path d="M32 14Q32 26 44 26Q32 26 32 38Q32 26 20 26Q32 26 32 14Z" fill="url(#pg)"/></svg><span id="brand">PinSay Feedback</span></h1>
+  <h1><svg class="mark" width="22" height="22" viewBox="6 2 52 58" fill="none" aria-hidden="true"><defs><linearGradient id="pg" gradientUnits="userSpaceOnUse" x1="10" y1="6" x2="54" y2="56"><stop offset="0" stop-color="#567bf7"/><stop offset="1" stop-color="#0ec7de"/></linearGradient></defs><path d="M10 20C10 12.268 16.268 6 24 6H40C47.732 6 54 12.268 54 20V32C54 39.732 47.732 46 40 46H38L32 56L26 46H24C16.268 46 10 39.732 10 32V20Z" stroke="url(#pg)" stroke-width="4.5" stroke-linejoin="round"/><path d="M32 14Q33 25 44 26Q33 27 32 38Q31 27 20 26Q31 25 32 14Z" fill="url(#pg)"/></svg><span id="brand">PinSay Feedback</span></h1>
   <div id="root">Loading…</div>
   <div class="err" id="err" role="alert"></div>
   <footer class="foot" id="foot"></footer>
